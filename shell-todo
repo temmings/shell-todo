@@ -1,0 +1,101 @@
+# -*- coding: utf-8 -*-
+# vim:ft=sh sw=2
+
+if [ -z "$TODO_FILE" ]; then
+  TODO_FILE=".todo"
+fi
+export TODO_FILE
+
+if [ -z "$TODO_FILE_BACKUP_EXT" ]; then
+  TODO_FILE_BACKUP_EXT="old"
+fi
+export TODO_FILE_BACKUP_EXT
+
+_todo_usage() {
+  echo "usage: todo [option] [<add todo>]"
+  echo " -d <number> remove todo"
+  echo " -u          undo (only once)"
+}
+
+_todo_show() {
+  [[ -f "$TODO_FILE" ]] || return
+
+  cat -b $TODO_FILE
+}
+
+_todo_add() {
+  [[ -f "$TODO_FILE" ]] || touch $TODO_FILE
+  _todo_backup
+  echo $* >> $TODO_FILE
+}
+
+_todo_delete() {
+  [[ $1 =~ ^[0-9]+$ ]] || return 1
+  [[ -f $TODO_FILE ]] || return 1
+
+  local removed=$(sed -n "${1}p" $TODO_FILE)
+  if [[ -n $removed ]]; then
+    sed -i.$TODO_FILE_BACKUP_EXT "${1}d" $TODO_FILE
+    echo "removed: $removed"
+  fi
+}
+
+_todo_backup() {
+  [[ -f $TODO_FILE ]] || return 1
+
+  cp $TODO_FILE $TODO_FILE.$TODO_FILE_BACKUP_EXT
+}
+
+_todo_swapfile()
+{
+  local tmpfile=$(mktemp ${TODO_FILE}.XXXXXX)
+  mv "$1" "$tmpfile" && mv "$2" "$1" &&  mv "$tmpfile" "$2"
+}
+
+_todo_undo() {
+  [[ -f $TODO_FILE.$TODO_FILE_BACKUP_EXT ]] || return 1
+
+  echo "undo (swap $TODO_FILE <-> $TODO_FILE.$TODO_FILE_BACKUP_EXT)"
+  _todo_swapfile $TODO_FILE $TODO_FILE.$TODO_FILE_BACKUP_EXT
+}
+
+todo() {
+  if [[ -z "$*" ]]; then
+    _todo_usage
+    return 1
+  fi
+
+  local OPT
+  for OPT in $*; do
+    case $OPT in
+      -u)
+        _todo_undo
+        _todo_show
+        return
+        ;;
+      -d)
+        _todo_delete "$2"
+        _todo_show
+        return
+        ;;
+      *)
+        _todo_add "$*"
+        _todo_show
+        return
+        ;;
+    esac
+    shift
+  done
+}
+
+if [[ -n "$ZSH_VERSION" ]]; then
+  autoload -U add-zsh-hook
+  add-zsh-hook chpwd _todo_show
+elif [[ -n "$BASH_VERSION" ]]; then
+  cd() {
+    builtin cd "$@"
+    local ret=$?
+    ((ret)) || _todo_show
+    return $ret
+  }
+fi
