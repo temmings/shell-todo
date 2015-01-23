@@ -1,0 +1,7 @@
+language: bash
+
+before_script:
+    - bash test.prepare.sh
+
+script:
+    - bash test.shell-todo.sh
