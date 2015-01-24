@@ -25,3 +25,5 @@ use antigen:
 ```bash
 antigen temmings/shell-todo shell-todo
 ```
+
+[![Build Status](https://travis-ci.org/temmings/shell-todo.svg)](https://travis-ci.org/temmings/shell-todo)
