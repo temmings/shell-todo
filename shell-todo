@@ -33,7 +33,8 @@ _todo_delete() {
   [[ $1 =~ ^[0-9]+$ ]] || return 1
   [[ -f $TODO_FILE ]] || return 1
 
-  local removed=$(sed -n "${1}p" $TODO_FILE)
+  local removed
+  removed=$(sed -n "${1}p" $TODO_FILE)
   if [[ -n $removed ]]; then
     sed -i.$TODO_FILE_BACKUP_EXT "${1}d" $TODO_FILE
     echo "removed: $removed"

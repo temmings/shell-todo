@@ -6,12 +6,14 @@ setUp() {
     source $(dirname $0)/shell-todo
 }
 
-#tearDown() {
-#}
+tearDown() {
+    rm -f $TODO_FILE $TODO_FILE.$TODO_FILE_BACKUP_EXT
+}
 
 test_todo_swapfile() {
-    local file1=$(mktemp $SHUNIT_TMPDIR/$(basename $0).XXXXX)
-    local file2=$(mktemp $SHUNIT_TMPDIR/$(basename $0).XXXXX)
+    local file1 file2
+    file1=$(mktemp $SHUNIT_TMPDIR/$(basename $0).XXXXX)
+    file2=$(mktemp $SHUNIT_TMPDIR/$(basename $0).XXXXX)
     echo file 1 > $file1
     echo file 2 > $file2
     _todo_swapfile $file1 $file2 > /dev/null
@@ -32,7 +34,8 @@ test_todo_show() {
     _todo_add 'test show todo 1' > /dev/null
     _todo_add 'test show todo 2' > /dev/null
     _todo_add 'test show todo 3' > /dev/null
-    local result=$(_todo_show)
+    local result
+    result=$(_todo_show)
     assertTrue '[[ "$result" =~ "test show todo 1" ]]'
     assertTrue '[[ "$result" =~ "test show todo 2" ]]'
     assertTrue '[[ "$result" =~ "test show todo 3" ]]'
@@ -48,10 +51,10 @@ test_todo_backup() {
 test_todo_delete() {
     _todo_add 'test delete todo' > /dev/null
     _todo_add 'test delete todo 2' > /dev/null
-    _todo_delete 2 > /dev/null
+    (_todo_delete 2 > /dev/null)
     assertEquals "test delete todo" "$(tail -1 $TODO_FILE)"
-    _todo_delete 1 > /dev/null
-    assertNull "$(tail -1 $TODO_FILE)"
+    (_todo_delete 1 > /dev/null)
+    assertNull "Todo is not empty" "$(tail -1 $TODO_FILE)"
 }
 
 test_todo_undo() {
@@ -63,4 +66,14 @@ test_todo_undo() {
     assertEquals "test redo todo" "$(tail -1 $TODO_FILE)"
 }
 
+test_todo_delete_include_redirect() {
+    _todo_add 'default todo' > /dev/null
+    _todo_add 'include > greater than' > /dev/null
+    _todo_add 'include < less than' > /dev/null
+    (_todo_delete 3 > /dev/null)
+    (_todo_delete 2 > /dev/null)
+    assertEquals "default todo" "$(tail -1 $TODO_FILE)"
+}
+
+SHUNIT_PARENT=$0
 source $(dirname $0)/shunit2-2.1.6/src/shunit2

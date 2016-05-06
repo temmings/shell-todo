@@ -1,7 +1,12 @@
 language: bash
 
 before_script:
+    - sudo apt-get install zsh
     - bash test.prepare.sh
 
+env:
+    - EXEC_SHELL=bash
+    - EXEC_SHELL="zsh -o shwordsplit --"
+
 script:
-    - bash test.shell-todo.sh
+    - "$EXEC_SHELL test.shell-todo.sh"
